@@ -6,16 +6,24 @@ from collections import Counter
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
+import os
 
+# Setup NLTK
 nltk.download('punkt', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('punkt_tab', quiet=True)
 
 stop_words = set(stopwords.words('portuguese'))
 
+# FULL LIST OF MUNICIPALITIES
 municipios = [
-    "Água Clara", "Amambai", "Anastácio", "Angélica",
-    # ... rest of your list
+    "Água Clara", "Amambai", "Anastácio", "Angélica", "Aparecida do Taboado",
+    "Aral Moreira", "Bataguassu", "Batayporã", "Bela Vista", "Brasilândia",
+    "Caarapó", "Cassilândia", "Chapadão do Sul", "Coronel Sapucaia", "Deodápolis",
+    "Dois Irmãos do Buriti", "Eldorado", "Fátima do Sul", "Glória de Dourados",
+    "Iguatemi", "Itaporã", "Itaquiraí", "Ivinhema", "Jardim", "Ladário",
+    "Miranda", "Mundo Novo", "Naviraí", "Nova Andradina", "Paranaíba",
+    "Paranhos", "Porto Murtinho", "Ribas do Rio Pardo", "Sete Quedas", "Sonora", "Tacuru"
 ]
 
 def limpar_html(texto):
@@ -71,9 +79,10 @@ def gerar_compilado_municipio(df_municipio):
     temas = [p for p, _ in Counter(palavras).most_common(5)]
     return resumo, ", ".join(temas)
 
-# --- MAIN EXECUTION ---
+# --- EXECUTION ---
 todas_noticias = []
 for municipio in municipios:
+    print(f"Buscando notícias para: {municipio}...")
     noticias = buscar_noticias_google_news(municipio, limite=5)
     todas_noticias.extend(noticias)
 
@@ -83,15 +92,29 @@ resumos = []
 for municipio in municipios:
     df_mun = df_noticias[df_noticias["municipio"] == municipio].copy()
     if df_mun.empty:
-        resumos.append({"municipio": municipio, "qtd_noticias_encontradas": 0, "temas_frequentes": "", "resumo_para_slide": "Não foram encontradas notícias recentes."})
+        resumos.append({
+            "municipio": municipio, 
+            "qtd_noticias_encontradas": 0, 
+            "temas_frequentes": "", 
+            "resumo_para_slide": "Não foram encontradas notícias recentes."
+        })
     else:
         resumo, temas = gerar_compilado_municipio(df_mun)
-        resumos.append({"municipio": municipio, "qtd_noticias_encontradas": len(df_mun), "temas_frequentes": temas, "resumo_para_slide": resumo})
+        resumos.append({
+            "municipio": municipio, 
+            "qtd_noticias_encontradas": len(df_mun), 
+            "temas_frequentes": temas, 
+            "resumo_para_slide": resumo
+        })
 
 df_resumos = pd.DataFrame(resumos)
 
-# Save to CSV
+# Create data directory if it doesn't exist
+if not os.path.exists('data'):
+    os.makedirs('data')
+
+# Save to CSV with UTF-8-SIG for Power BI compatibility
 df_noticias.to_csv("data/noticias_coletadas.csv", index=False, encoding="utf-8-sig")
 df_resumos.to_csv("data/resumo_municipios.csv", index=False, encoding="utf-8-sig")
 
-print("CSVs saved successfully.")
+print(f"Processo concluído. Total de notícias: {len(df_noticias)}")
