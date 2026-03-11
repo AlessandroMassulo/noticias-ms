@@ -32,7 +32,7 @@ def limpar_html(texto):
     return texto.strip()
 
 def buscar_noticias_google_news(municipio, limite=5):
-consulta = (
+    consulta = (
         f'"{municipio}" "Mato Grosso do Sul" '
         f'(lazer OR cultura OR turismo OR esporte OR evento OR comportamento OR entretenimento OR '
         f'sesc OR "turismo social" OR "atividade física" OR "qualidade de vida" OR '
