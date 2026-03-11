@@ -38,9 +38,8 @@ def buscar_noticias_google_news(municipio, limite=5):
         f'sesc OR "turismo social" OR "atividade física" OR "qualidade de vida" OR '
         f'oficina OR "curso gratuito" OR "evento cultural" OR "programação cultural" OR '
         f'teatro OR show OR "atividade recreativa") '
-        f'-polícia -policial -crime -homicídio -assassinato -morte '
-        f'-eleição -eleições -política -partido'
-        )
+        f'-crime -homicídio -assassinato -morte '
+       )
     url = f"https://news.google.com/rss/search?q={urllib.parse.quote(consulta)}&hl=pt-BR&gl=BR&ceid=BR:pt-419"
     feed = feedparser.parse(url)
     resultados = []
