@@ -22,7 +22,7 @@ jobs:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: pip install feedparser pandas nltk openpyxl
+        run: pip install feedparser pandas nltk openpyxl requests
 
       - name: Run script
         run: python script.py
