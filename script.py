@@ -2,6 +2,7 @@ import feedparser
 import pandas as pd
 import urllib.parse
 import re
+import requests 
 from collections import Counter
 import nltk
 from nltk.corpus import stopwords
