@@ -2,7 +2,6 @@ import feedparser
 import pandas as pd
 import urllib.parse
 import re
-import requests 
 from collections import Counter
 import nltk
 from nltk.corpus import stopwords
@@ -87,41 +86,6 @@ def gerar_compilado_municipio(df_municipio):
     temas = [p for p, _ in Counter(palavras).most_common(5)]
     return resumo, ", ".join(temas)
 
-def enviar_resumo_ao_teams(df_resumos):
-    """Envia os resumos gerados para o canal do Microsoft Teams."""
-    webhook_url = "https://default9a81895ca40b4feab0038737641605.bc.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/df2d5abe1f854f678710c44019eeb86c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xr8QHMW9AiqzobPmR8drllIbEpvNhNBaaQkiyRqKlOM"
-    
-    for _, row in df_resumos.iterrows():
-        # Só envia se houver notícias encontradas
-        if row['qtd_noticias_encontradas'] > 0:
-            
-            # Montando o cartão visual (Adaptive Card)
-            payload = {
-                "type": "message",
-                "attachments": [{
-                    "contentType": "application/vnd.microsoft.card.adaptive",
-                    "content": {
-                        "type": "AdaptiveCard",
-                        "body": [
-                            {"type": "TextBlock", "text": f"📍 {row['municipio']}", "weight": "Bolder", "size": "Large", "color": "Accent"},
-                            {"type": "TextBlock", "text": f"Encontradas {row['qtd_noticias_encontradas']} novas notícias sobre lazer/cultura.", "isSubtle": True, "spacing": "None"},
-                            {"type": "TextBlock", "text": f"**Temas:** {row['temas_frequentes']}", "wrap": True},
-                            {"type": "TextBlock", "text": row['resumo_para_slide'], "wrap": True, "italic": True, "spacing": "Medium"},
-                            {"type": "FactSet", "facts": [{"title": "Status", "value": "Coleta Concluída"}]}
-                        ],
-                        "$schema": "http://adaptivecards.io",
-                        "version": "1.4"
-                    }
-                }]
-            }
-            
-            try:
-                response = requests.post(webhook_url, json=payload)
-                if response.status_code not in [200, 202]:
-                    print(f"Erro ao enviar {row['municipio']}: {response.status_code}")
-            except Exception as e:
-                print(f"Falha na conexão com Teams para {row['municipio']}: {e}")
-
 # --- EXECUTION ---
 todas_noticias = []
 for municipio in municipios:
@@ -159,9 +123,5 @@ if not os.path.exists('data'):
 # Save to CSV with UTF-8-SIG for Power BI compatibility
 df_noticias.to_csv("data/noticias_coletadas.csv", index=False, encoding="utf-8-sig")
 df_resumos.to_csv("data/resumo_municipios.csv", index=False, encoding="utf-8-sig")
-
-# 2. DISPARA PARA O TEAMS
-print("Iniciando envio para o Microsoft Teams...")
-enviar_resumo_ao_teams(df_resumos)
 
 print(f"Processo concluído. Total de notícias: {len(df_noticias)}")
