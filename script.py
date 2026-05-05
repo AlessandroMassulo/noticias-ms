@@ -31,21 +31,18 @@ def limpar_html(texto):
     texto = texto.replace('&nbsp;', ' ').replace('&amp;', '&')
     return texto.strip()
 
-def buscar_noticias_google_news(municipio, limite=5):
-    consulta = (
-        f'"{municipio}" "Mato Grosso do Sul" '
-        f'(lazer OR cultura OR turismo OR esporte OR evento OR comportamento OR entretenimento OR '
-        f'sesc OR "turismo social" OR "atividade física" OR "qualidade de vida" OR '
-        f'oficina OR "curso gratuito" OR "evento cultural" OR "programação cultural" OR '
-        f'teatro OR show OR "atividade recreativa") '
-        f'-crime -homicídio -assassinato -morte '
-       )
-    url = f"https://news.google.com/rss/search?q={urllib.parse.quote(consulta)}&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+def buscar_noticias_google_news(municipio, categoria, consulta_str, limite=5):
+    """
+    Busca notícias baseada em uma consulta específica e rotula com uma categoria.
+    """
+    url = f"https://news.google.com/rss/search?q={urllib.parse.quote(consulta_str)}&hl=pt-BR&gl=BR&ceid=BR:pt-419"
     feed = feedparser.parse(url)
+    
     resultados = []
     for item in feed.entries[:limite]:
         resultados.append({
             "municipio": municipio,
+            "categoria": categoria,  # Nova coluna para facilitar o filtro no Power BI
             "titulo": item.get("title", ""),
             "fonte": item.get("source", {}).get("title", "") if isinstance(item.get("source"), dict) else "",
             "data": item.get("published", ""),
@@ -53,6 +50,30 @@ def buscar_noticias_google_news(municipio, limite=5):
             "link": item.get("link", "")
         })
     return resultados
+
+# --- DEFINIÇÃO DAS ESTRUTURAS DE CONSULTA ---
+# Criamos um dicionário para iterar as categorias facilmente
+categorias_queries = {
+    "Social e Cultura": (
+        "(Sesc OR Sesi OR 'turismo social' OR 'atividade física' OR 'qualidade de vida' OR "
+        "lazer OR cultura OR teatro OR show OR 'evento cultural' OR 'programação cultural' OR "
+        "'saúde do trabalhador' OR 'exame médico' OR 'unidade móvel') "
+        "-crime -homicídio -assassinato -morte -policial -preso"
+    ),
+    "Educação e Negócios": (
+        "(Senac OR Senai OR Sebrae OR 'curso técnico' OR 'capacitação' OR 'qualificação profissional' OR "
+        "'jovem aprendiz' OR 'vaga de emprego' OR 'vagas abertas' OR 'empreendedorismo' OR "
+        "'pequenas empresas' OR 'indústria' OR 'comércio' OR 'palestra' OR 'workshop') "
+        "-crime -homicídio -assassinato -morte -tráfico"
+    ),
+    "Política e Institucional": (
+        "('Prefeitura Municipal' OR 'Câmara Municipal' OR 'vereador' OR 'prefeito' OR 'licitação' OR "
+        "'parceria pública' OR 'convênio' OR 'Fecomércio' OR 'Fiems' OR 'Famasul' OR "
+        "'sindicato patronal' OR 'sindicato rural' OR 'acordo coletivo' OR 'reunião institucional') "
+        "-crime -homicídio -assassinato -morte -corrupção -investigação"
+    )
+}
+
 
 def resumo_automatico(texto, max_frases=3):
     if not texto or len(texto.strip()) == 0:
@@ -88,10 +109,18 @@ def gerar_compilado_municipio(df_municipio):
 
 # --- EXECUTION ---
 todas_noticias = []
+
 for municipio in municipios:
-    print(f"Buscando notícias para: {municipio}...")
-    noticias = buscar_noticias_google_news(municipio, limite=5)
-    todas_noticias.extend(noticias)
+    print(f"--- Iniciando monitoramento: {municipio} ---")
+    
+    for nome_cat, termos in categorias_queries.items():
+        # Monta a query completa combinando Município + Estado + Termos da Categoria
+        query_completa = f'"{municipio}" "Mato Grosso do Sul" {termos}'
+        
+        print(f"  > Buscando {nome_cat}...")
+        
+        noticias = buscar_noticias_google_news(municipio, nome_cat, query_completa, limite=5)
+        todas_noticias.extend(noticias)
 
 df_noticias = pd.DataFrame(todas_noticias)
 
