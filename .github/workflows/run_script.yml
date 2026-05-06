@@ -2,7 +2,7 @@ name: Coletar Notícias
 
 on:
   schedule:
-    - cron: '0 6,16 * * *'
+    - cron: '55 9,15 * * *'
   workflow_dispatch:       # Also allows manual trigger from GitHub UI
 
 permissions:
