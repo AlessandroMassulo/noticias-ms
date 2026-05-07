@@ -16,6 +16,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug current times
+        run: |
+          echo "UTC:"
+          date -u
+
+          echo ""
+          echo "Runner local time:"
+          date
+
+          echo ""
+          echo "Campo Grande:"
+          TZ=America/Campo_Grande date
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
